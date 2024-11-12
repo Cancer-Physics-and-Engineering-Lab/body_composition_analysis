@@ -9,7 +9,7 @@ def main():
     parser.add_argument('-dicom_path_T1', type=str, required=True, help="Path to the T1 DICOM series directory")
     parser.add_argument('-time_interval', type=int, required=True, help="Time interval between scans in days")
     parser.add_argument('-save_file', type=str, required=True, help="Path to save the output file")
-    parser.add_argument('-verbose', type=int, default=0, help="Verbosity level (0 for silent, higher for more output)")
+    parser.add_argument('-verbose', type=int, default=1, help="Verbosity level (0 for silent, higher for more output)")
 
     args = parser.parse_args()
 

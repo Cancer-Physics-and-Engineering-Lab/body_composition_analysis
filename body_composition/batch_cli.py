@@ -6,19 +6,19 @@ def main():
     parser = argparse.ArgumentParser(description="Batch process multiple cases for body composition analysis.")
     
     parser.add_argument(
-        "-m", "--master_list_path",
+        "-master_list_path",
         type=str,
         required=True,
         help="Path to the master CSV file containing case information."
     )
     parser.add_argument(
-        "-o", "--batch_run_save_file",
+        "-batch_run_save_file",
         type=str,
         required=True,
         help="Output file path to save the combined batch results."
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-verbose",
         type=int,
         default=1,
         help="Verbosity level: 0 for silent, 1 for verbose."
