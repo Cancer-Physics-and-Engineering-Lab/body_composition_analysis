@@ -5,7 +5,8 @@ A command-line based tool for body composition analysis using CT images. This to
 
 ## Body Composition Changes Visualization
 ![Body Composition Changes](resources/description_img.png)  
-*Example visualization of body composition changes over time.*
+*The above image will be replaced before any publication."
+*(Inherited by Damm et al. 2023) Example visualization of body composition changes over time.*
 
 ---
 
