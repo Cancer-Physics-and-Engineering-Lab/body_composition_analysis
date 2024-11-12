@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from body_composition.utils import dicom2nifti, run_total_segmentator, vol_and_int_extraction, calculate_changes
-
+from pathlib import Path
 
 class DataProcessor:
     def __init__(self, Patient_Identifier, dicom_path_T0:str, dicom_path_T1:str, time_interval:int, save_file:str, verbose = 1):
@@ -22,17 +22,20 @@ class DataProcessor:
         self.module_05_save_outputs()
 
     def check_initial_requirements(self, dicom_path):
-        if not os.path.isdir(dicom_path):
+        '''if not os.path.isdir(dicom_path):
             raise ValueError(f"{dicom_path} is not a valid directory.")
         else:
             if not any(fname.endswith('.dcm') for fname in os.listdir(dicom_path)):
                 raise ValueError(f"{dicom_path} has no dicom file.")
             else:
                 return True
+        return True'''
+        return True
 
     def module_01_convert_to_niftis(self):
-        self.nii_path_T0 = os.path.join(os.path.dirname(self.dicom_path_T0), os.path.basename(self.dicom_path_T0)+".nii.gz")
-        self.nii_path_T1 = os.path.join(os.path.dirname(self.dicom_path_T1), os.path.basename(self.dicom_path_T1)+".nii.gz")
+        self.nii_path_T0 = os.path.join(os.path.dirname(self.dicom_path_T0), os.path.splitext(os.path.splitext(os.path.basename(self.dicom_path_T0))[0])[0]+".nii.gz")
+        self.nii_path_T1 = os.path.join(os.path.dirname(self.dicom_path_T1), os.path.splitext(os.path.splitext(os.path.basename(self.dicom_path_T1))[0])[0]+".nii.gz")
+        
         dicom2nifti.dicom2nifti(self.dicom_path_T0, self.nii_path_T0, verbose=self.verbose)
         dicom2nifti.dicom2nifti(self.dicom_path_T1, self.nii_path_T1, verbose=self.verbose)
 
@@ -89,9 +92,18 @@ class DataProcessor:
         
     def module_04_calculate_changes(self):
         # Prepare body cavity arr.
-        self.body_cav_img_T0, self.body_cav_arr_T0 = vol_and_int_extraction.get_img_and_arr_from_nii(nii_path=os.path.join(self.body_seg_dir_path_T0, "body.nii.gz"))
+        if not os.path.isfile(self.body_seg_dir_path_T0):
+            self.body_cav_img_T0, self.body_cav_arr_T0 = vol_and_int_extraction.get_img_and_arr_from_nii(nii_path=os.path.join(self.body_seg_dir_path_T0, "body.nii.gz")) 
+        else:
+            self.body_cav_img_T0, self.body_cav_arr_T0 = vol_and_int_extraction.get_img_and_arr_from_nii(nii_path=self.body_seg_dir_path_T0) 
+        
         self.body_cav_arr_T0, _ = vol_and_int_extraction.get_area_and_axial_thickness_at_center_L3(self.body_cav_img_T0 , self.body_cav_arr_T0, self.L3_center_T0) # at center L3
-        self.body_cav_img_T1, self.body_cav_arr_T1 = vol_and_int_extraction.get_img_and_arr_from_nii(nii_path=os.path.join(self.body_seg_dir_path_T1, "body.nii.gz"))
+        
+        if not os.path.isfile(self.body_seg_dir_path_T1):
+            self.body_cav_img_T1, self.body_cav_arr_T1 = vol_and_int_extraction.get_img_and_arr_from_nii(nii_path=os.path.join(self.body_seg_dir_path_T1, "body.nii.gz"))
+        else:
+            self.body_cav_img_T1, self.body_cav_arr_T1 = vol_and_int_extraction.get_img_and_arr_from_nii(nii_path=self.body_seg_dir_path_T1)
+        
         self.body_cav_arr_T1, _ = vol_and_int_extraction.get_area_and_axial_thickness_at_center_L3(self.body_cav_img_T1 , self.body_cav_arr_T1, self.L3_center_T1) # at center L3
         
         self.module_04_organ_changes()
@@ -169,7 +181,7 @@ class DataProcessor:
                 'VAF_area_T0', 'VAF_avg_intensity_T0', 'VAF_std_intensity_T0', # Visceral abdominal fat (VAF)
                 'SAF_area_T0', 'SAF_avg_intensity_T0', 'SAF_std_intensity_T0', # Subcutaneous abdominal fat (SAF)
                 'SMA_area_T0', 'SMA_avg_intensity_T0', 'SMA_std_intensity_T0', # Skeletal muscle area (SMA)
-                'slice_thickness_T0', # slice thickness
+                'note_T0', 'slice_thickness_T0', # slice thickness
                 '   ',
                 # T1: ex. pre-surgery
                 'liver_vol_T1', 'liver_is_truncated_T1', 'liver_avg_intensity_T1', 'liver_std_intensity_T1', # liver
@@ -177,7 +189,7 @@ class DataProcessor:
                 'VAF_area_T1', 'VAF_avg_intensity_T1', 'VAF_std_intensity_T1', # Visceral abdominal fat (VAF)
                 'SAF_area_T1', 'SAF_avg_intensity_T1', 'SAF_std_intensity_T1', # Subcutaneous abdominal fat (SAF)
                 'SMA_area_T1', 'SMA_avg_intensity_T1', 'SMA_std_intensity_T1', # Skeletal muscle area (SMA)
-                'slice_thickness_T1', # slice thickness
+                'note_T1','slice_thickness_T1', # slice thickness
                 '   ',
                 # Changes between T0 and T1
                 'liver_changes_vol_perc', 'liver_changes_vol_perc_rate', # liver
@@ -201,9 +213,11 @@ class DataProcessor:
 if __name__ == "__main__":
     # Input: a pair of dicom series directory, time stamp (if not inside the meta data)
     # Output: excel sheet with one row, center of L3 with colored tissue masks, Loss of 
-    dir_path = "/Radonc/Cancer Physics and Engineering Lab/Yeseul Kim/Important_Dataset/MDACC/Converted_NIFTIs/Complete/Only_L3Center/456182/Validated_BL_and_PreSurg"
-    dicom_path_T0 = os.path.join(dir_path, "BL_CTScans", "Art_recon")
-    dicom_path_T1 = os.path.join(dir_path, "PreSurg_CTScans", "Art_raw")
+    #dir_path = "/Radonc/Cancer Physics and Engineering Lab/Yeseul Kim/Important_Dataset/MDACC/Converted_NIFTIs/Complete/Only_L3Center/456182/Validated_BL_and_PreSurg"
+    dir_path = "/Radonc/Cancer Physics and Engineering Lab/Yeseul Kim/Important_Dataset/Alliance_Trial/9111390/Validated_BL_and_PreSurg"
+    
+    dicom_path_T0 = os.path.join(dir_path, "BL_CTScans", "9111390_Arterial_T0")
+    dicom_path_T1 = os.path.join(dir_path, "PreSurg_CTScans", "9111390_Arterial_T1")
     save_file = os.path.join(dir_path, "sample_output.csv")
 
     DataProcessor(Patient_Identifier = 456182, dicom_path_T0=dicom_path_T0, dicom_path_T1=dicom_path_T1, time_interval=90, save_file = save_file, verbose = 0)

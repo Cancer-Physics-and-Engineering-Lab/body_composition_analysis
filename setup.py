@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="body_composition_analysis",
-    version="0.1",
+    version="0.2",
     packages=find_packages(),
     install_requires=[
         "nibabel==5.3.2",
@@ -16,11 +16,21 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "body_composition=body_composition.cli:main"
+            "body_composition=body_composition.cli:main",
+            "body_composition_batch=body_composition.batch_cli:main"
         ]
     },
     author="Yeseul Kim",
     author_email="ykim23@mdanderson.org",
     description="A package for body composition analysis from DICOM images.",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    url="https://github.com/yourusername/body_composition_analysis",  # GitHub repository URL
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires=">=3.6",
 )
 
